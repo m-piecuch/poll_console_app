@@ -18,10 +18,11 @@ SELECT_POOL_WITH_OPTIONS = """  SELECT * FROM polls
                                 ON polls.id = options.poll_id
                                 WHERE polls.id = %s ;"""
 
-INSERT_OPTION = """ INSERT INTO options (option_text, poll_id) VALUES s%"""
+INSERT_OPTION = """ INSERT INTO options (option_text, poll_id) VALUES (%s, %s);"""
 
-INSERT_VOTE = """ INSERT INTO votes (username, option_id) VALUES (s%, s%)"""
+INSERT_VOTE = """ INSERT INTO votes (username, option_id) VALUES (%s, %s);"""
 
+INSERT_POLL_ENTITY = """INSERT INTO polls (title, owner_username) VALUES (%s, %s) RETURNING id;"""
 
 def create_tables(connection):
     with connection:
@@ -61,11 +62,13 @@ def get_random_poll_vote(connection, option_id):
             pass
 
 
-def create_poll(connection):
+def create_poll(connection, poll_name, poll_owner, options):
     with connection:
         with connection.cursor() as cursor:
-            pass
-
+            cursor.execute(INSERT_POLL_ENTITY, (poll_name, poll_owner))
+            poll_id = cursor.fetchone()[0]
+            for option in options:
+                cursor.execute(INSERT_OPTION, (option, poll_id))
 
 def add_poll_vote(connection, username, option_id):
     with connection:
