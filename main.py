@@ -45,7 +45,7 @@ def prompt_vote_poll(connection):
     poll_options = database.get_poll_details(connection, poll_id)
     _print_poll_options(poll_options)
 
-    option_id = int(print("Enter option id you'd like to vote on: "))
+    option_id = int(input("Enter option id you'd like to vote on: "))
     username = input("Enter your username: ")
 
     database.add_poll_vote(connection, username, option_id)
@@ -78,11 +78,11 @@ def randomize_poll_winner(connection):
 
 
 MENU_OPTIONS = {
-    "1" : prompt_create_poll,
-    "2" : list_open_polls,
-    "3" : prompt_vote_poll,
-    "4" : show_poll_votes,
-    "5" : randomize_poll_winner,
+    "1": prompt_create_poll,
+    "2": list_open_polls,
+    "3": prompt_vote_poll,
+    "4": show_poll_votes,
+    "5": randomize_poll_winner,
 }
 
 
