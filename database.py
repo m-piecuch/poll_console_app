@@ -1,3 +1,5 @@
+from psycopg2.extras import execute_values
+
 CREATE_POLLS = """CREATE TABLE IF NOT EXISTS polls (id SERIAL PRIMARY KEY, title TEXT, owner_username TEXT);"""
 
 CREATE_OPTIONS = """CREATE TABLE IF NOT EXISTS options 
@@ -67,8 +69,12 @@ def create_poll(connection, poll_name, poll_owner, options):
         with connection.cursor() as cursor:
             cursor.execute(INSERT_POLL_ENTITY, (poll_name, poll_owner))
             poll_id = cursor.fetchone()[0]
-            for option in options:
-                cursor.execute(INSERT_OPTION, (option, poll_id))
+
+            option_values = [(option, poll_id) for option in options]
+            execute_values(cursor, INSERT_OPTION, option_values)
+
+            # for option in options:
+            #     cursor.execute(INSERT_OPTION, (option, poll_id))
 
 def add_poll_vote(connection, username, option_id):
     with connection:
