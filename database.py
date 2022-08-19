@@ -27,7 +27,11 @@ SELECT_LATEST_POLL = """SELECT * FROM polls
                         SELECT id FROM polls ORDER BY id DESC LIMIT 1
                         );"""
 
-INSERT_OPTION = """ INSERT INTO options (option_text, poll_id) VALUES (%s, %s);"""
+SELECT_POLL_VOTE_DETAILS = """  SELECT options.id, options.option_text
+                                FROM options
+"""
+
+INSERT_OPTION = """ INSERT INTO options (option_text, poll_id) VALUES %s;"""
 
 INSERT_VOTE = """ INSERT INTO votes (username, option_id) VALUES (%s, %s);"""
 
