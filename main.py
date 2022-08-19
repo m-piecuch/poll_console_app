@@ -1,11 +1,19 @@
 import psycopg2
+from time import sleep
 from psycopg2.errors import DivisionByZero
 import os
 from dotenv import load_dotenv
 
 import database
 
-DATABASE_PROMPT = "Enter the DATABASE_URI value or leave empty to load from .env file:  "
+# DATABASE_PROMPT = "Enter custom DATABASE_URI value  or leave empty to load from .env file:  "
+
+DATABASE_PROMPT = """ --- SELECT DB: --- 
+1) Provide custom database URI or
+2) Select PRODUCTION DATABASE or
+or skip selection and press enter for using TEST database (recommended)"""
+
+DATABASE_URI_PROMPT = "Provide database URI: "
 
 MENU_PROMPT = """ --- Menu --- 
 
@@ -87,11 +95,22 @@ MENU_OPTIONS = {
 
 
 def menu():
-    database_url = input(DATABASE_PROMPT)
 
-    if not database_url:
+    db_selection = input(DATABASE_PROMPT)
+
+    if not db_selection or db_selection == "2":
         load_dotenv()
-        database_url = os.environ["DATABASE_URL"]
+        if not db_selection:
+            database_url = os.environ["TEST_DATABASE_URL"]
+        else:
+            database_url = os.environ["DATABASE_URL"]
+    elif db_selection == "1":
+        database_url = input(DATABASE_URI_PROMPT)
+    else:
+        print("Connection refused. Try again >>")
+        sleep(1)
+        menu()
+
     connection = psycopg2.connect(database_url)
     database.create_tables(connection)
 
