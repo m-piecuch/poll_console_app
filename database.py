@@ -1,5 +1,10 @@
 from psycopg2.extras import execute_values
 
+Poll = tuple[int, str, str]
+Vote = tuple[str, int]
+PollWithOption = tuple[int, str, str, int, str, int]
+PollResult = list[int, str, int, float]
+
 CREATE_POLLS = """CREATE TABLE IF NOT EXISTS polls (id SERIAL PRIMARY KEY, title TEXT, owner_username TEXT);"""
 
 CREATE_OPTIONS = """CREATE TABLE IF NOT EXISTS options 
@@ -13,7 +18,7 @@ CREATE_VOTES = """  CREATE TABLE IF NOT EXISTS votes
                     option_id INTEGER, 
                     FOREIGN KEY (option_id) REFERENCES options(id));"""
 
-SELECT_ALL_POOLS = """SELECT * FROM pools;"""
+SELECT_ALL_POOLS = """SELECT * FROM polls;"""
 
 SELECT_POOL_WITH_OPTIONS = """  SELECT * FROM polls
                                 JOIN options
@@ -27,15 +32,20 @@ SELECT_LATEST_POLL = """SELECT * FROM polls
                         SELECT id FROM polls ORDER BY id DESC LIMIT 1
                         );"""
 
-SELECT_POLL_VOTE_DETAILS = """  SELECT options.id, options.option_text
+SELECT_POLL_VOTE_DETAILS = """  SELECT options.id, options.option_text, 
+                                    COUNT(votes.option_id) AS sum_of_votes, 
+                                    COUNT(votes.option_id) / SUM(COUNT(option_id)) OVER() * 100 AS percentage
                                 FROM options
-"""
+                                LEFT JOIN votes ON options.id = votes.option_id 
+                                WHERE options.poll_id = %s
+                                GROUP BY options.id;"""
 
 INSERT_OPTION = """ INSERT INTO options (option_text, poll_id) VALUES %s;"""
 
 INSERT_VOTE = """ INSERT INTO votes (username, option_id) VALUES (%s, %s);"""
 
 INSERT_POLL_ENTITY = """INSERT INTO polls (title, owner_username) VALUES (%s, %s) RETURNING id;"""
+
 
 def create_tables(connection):
     with connection:
@@ -45,40 +55,41 @@ def create_tables(connection):
             cursor.execute(CREATE_VOTES)
 
 
-def get_polls(connection):
+def get_polls(connection) -> list[Poll]:
     with connection:
         with connection.cursor() as cursor:
             cursor.execute(SELECT_ALL_POOLS)
             return cursor.fetchall()
 
 
-def get_latest_poll(connection):
+def get_latest_poll(connection) -> list[PollWithOption]:
     with connection:
         with connection.cursor() as cursor:
             cursor.execute(SELECT_LATEST_POLL)
             return cursor.fetchall()  # not fetchone - return multiple rows because of options included
 
 
-def get_poll_details(connection, poll_id):
+def get_poll_details(connection, poll_id: int) -> list[PollWithOption]:
     with connection:
         with connection.cursor() as cursor:
-            cursor.execute(SELECT_POOL_WITH_OPTIONS, (poll_id, ))
+            cursor.execute(SELECT_POOL_WITH_OPTIONS, (poll_id,))
             return cursor.fetchall()
 
 
-def get_poll_and_vote_results(connection, poll_id):
+def get_poll_and_vote_results(connection, poll_id: int) -> list[PollResult]:
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute(SELECT_POLL_VOTE_DETAILS, (poll_id,))
+            return cursor.fetchall()
+
+
+def get_random_poll_vote(connection, option_id: int) -> Vote:
     with connection:
         with connection.cursor() as cursor:
             pass
 
 
-def get_random_poll_vote(connection, option_id):
-    with connection:
-        with connection.cursor() as cursor:
-            pass
-
-
-def create_poll(connection, poll_name, poll_owner, options):
+def create_poll(connection, poll_name: str, poll_owner: str, options: list[str]):
     with connection:
         with connection.cursor() as cursor:
             cursor.execute(INSERT_POLL_ENTITY, (poll_name, poll_owner))
@@ -90,7 +101,8 @@ def create_poll(connection, poll_name, poll_owner, options):
             # for option in options:
             #     cursor.execute(INSERT_OPTION, (option, poll_id))
 
-def add_poll_vote(connection, username, option_id):
+
+def add_poll_vote(connection, username: str, option_id: int):
     with connection:
         with connection.cursor() as cursor:
             cursor.execute(INSERT_VOTE, (username, option_id))

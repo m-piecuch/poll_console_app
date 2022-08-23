@@ -15,7 +15,9 @@ or skip selection and press enter for using TEST database (recommended)"""
 
 DATABASE_URI_PROMPT = "Provide database URI: "
 
-MENU_PROMPT = """ --- Menu --- 
+MENU_PROMPT = """ 
+
+--- Menu --- 
 
 1)  Create new poll
 2)  List open polls
@@ -44,7 +46,7 @@ def list_open_polls(connection):
     polls = database.get_polls(connection)
 
     for _id, title, owner in polls:
-        print(f"{_id}: {title} (created by {owner}")
+        print(f"{_id}: {title} (created by {owner})")
 
 
 def prompt_vote_poll(connection):
@@ -59,7 +61,7 @@ def prompt_vote_poll(connection):
     database.add_poll_vote(connection, username, option_id)
 
 
-def _print_poll_options(poll_options):
+def _print_poll_options(poll_options: list[database.PollWithOption]):
     for option in poll_options:
         print(f"{option[3]} : {option[4]}")
 
@@ -72,7 +74,7 @@ def show_poll_votes(connection):
         print("No votes yet cast for this poll.")
     else:
         for _id, option_text, count, percentage in poll_and_votes:
-            print(f"{option_text} got {count} votes ({percentage:.2f}% of total.")
+            print(f" - {option_text} got {count} votes ({percentage:.2f}% of total.)")
 
 
 def randomize_poll_winner(connection):
