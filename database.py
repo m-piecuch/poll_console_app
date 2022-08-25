@@ -20,6 +20,8 @@ CREATE_VOTES = """  CREATE TABLE IF NOT EXISTS votes
 
 SELECT_ALL_POOLS = """SELECT * FROM polls;"""
 
+SELECT_POLL = """SELECT * FROM poll WHERE id = %s"""
+
 SELECT_POOL_WITH_OPTIONS = """  SELECT * FROM polls
                                 JOIN options
                                 ON polls.id = options.poll_id
@@ -53,6 +55,13 @@ def create_tables(connection):
             cursor.execute(CREATE_POLLS)
             cursor.execute(CREATE_OPTIONS)
             cursor.execute(CREATE_VOTES)
+
+
+def get_poll(connection, poll_id: int) -> Poll:
+    with connection:
+        with connection.cursor() as cursor:
+            cursor.execute(SELECT_POLL, (poll_id,))
+            return cursor.fetchone()
 
 
 def get_polls(connection) -> list[Poll]:
